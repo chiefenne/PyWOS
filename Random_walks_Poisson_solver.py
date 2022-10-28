@@ -111,7 +111,6 @@ def walk_on_spheres(domain, x, eps, wos=None, verbose=False, recursions=0):
     else:
         if verbose:
             print('Walk on spheres finished')
-        print('Stopping walk on spheres')
         # return the walk on spheres path and sample points
         return wos
 
@@ -125,17 +124,17 @@ def solver(domain, walks):
 
 if __name__ == '__main__':
 
+    import matplotlib.pyplot as plt
+
+
     domain = sample_domain()
 
     x0 = np.array([0.0, 0.0])
     eps = 0.1
-    wos = walk_on_spheres(domain, x0, eps)
+    wos = walk_on_spheres(domain, x0, eps, verbose=True)
 
     # plot the domain
-    import matplotlib.pyplot as plt
-
-    domain = np.append(domain, [domain[0]], axis=0)
-
+    domain = np.append(domain, [domain[0]], axis=0) # close the polygon
     plt.plot(domain[:, 0], domain[:, 1], 'r-', lw=2)
     plt.plot(domain[:, 0], domain[:, 1], 'ro')
     plt.axis('equal')
@@ -162,6 +161,7 @@ if __name__ == '__main__':
         plt.arrow(x[0], x[1], xn[0]-x[0], xn[1]-x[1],
                   head_width=0.1, head_length=0.2, fc=col[i], ec=col[i], length_includes_head=True)
     plt.axis('equal')
+
     # toggle fullscreen mode
     plt.get_current_fig_manager().full_screen_toggle()
     plt.show()
