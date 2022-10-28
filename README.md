@@ -1,6 +1,6 @@
 # PyWOS
 
-Monte Carlo method based on a recursive walk-on-speres implementation for solving a 2D Poisson PDE written in Python.
+Monte Carlo method based on a recursive walk-on-spheres implementation for solving a 2D Poisson PDE written in Python.
 
 Based on the [video](https://youtu.be/bZbuKOxH71o) by Keenan Crane from Carnegie Mellon University and a code snippet he provided [here](https://www.cs.cmu.edu/~kmcrane/Projects/MonteCarloGeometryProcessing/WoSPoisson2D.cpp.html).
 
