@@ -87,8 +87,9 @@ def walk_on_spheres(domain, x, eps, wos=None, verbose=False, recursions=0):
 
     if recursions == 0 and verbose:
         print('Starting walk on spheres')
-    elif verbose:
-        print(f'Recursion level: {recursions:2d}')
+    else:
+        if verbose:
+            print(f'Recursion level: {recursions:03d}')
 
     # radius of the circle centered at x
     R, cp = closest_point_on_domain(domain, x)
