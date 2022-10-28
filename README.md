@@ -1,6 +1,6 @@
 
 ```diff
-- WORK IN PROGRESS.
+- WORK IN PROGRESS
 ```
 
 # PyWOS
