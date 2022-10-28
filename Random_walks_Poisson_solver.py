@@ -63,6 +63,15 @@ def closest_point_on_domain(domain, x):
             closest_point = cp
     return R, closest_point
 
+def sample_point_on_circle(R, x):
+    """Sample a point uniformly on a circle of radius R
+    centered at x in 2D.
+    """
+    # sample a point uniformly on the unit circle
+    theta = np.random.uniform(0.0, 2.0 * np.pi)
+    # scale the point to the circle of radius R
+    return x + np.array([R * np.cos(theta), R * np.sin(theta)])
+
 def sample_point_inside_circle(R, x):
     """Sample a point uniformly inside a circle of radius R
     centered at x in 2D.
@@ -73,21 +82,12 @@ def sample_point_inside_circle(R, x):
     # scale the point to the circle of radius R
     return x + np.array([r * np.cos(theta), r * np.sin(theta)])
 
-def sample_point_on_circle(R, x):
-    """Sample a point uniformly on a circle of radius R
-    centered at x in 2D.
-    """
-    # sample a point uniformly on the unit circle
-    theta = np.random.uniform(0.0, 2.0 * np.pi)
-    # scale the point to the circle of radius R
-    return x + np.array([R * np.cos(theta), R * np.sin(theta)])
-
-def walk_on_spheres(domain, x, eps, wos=None, recursions=0):
+def walk_on_spheres(domain, x, eps, wos=None, verbose=False, recursions=0):
     """Recursive walk on spheres implementation"""
 
-    if recursions == 0:
+    if recursions == 0 and verbose:
         print('Starting walk on spheres')
-    else:
+    elif verbose:
         print(f'Recursion level: {recursions:2d}')
 
     # radius of the circle centered at x
@@ -107,10 +107,12 @@ def walk_on_spheres(domain, x, eps, wos=None, recursions=0):
 
     if R > eps:
         # recurse
-        return walk_on_spheres(domain, x, eps, wos, recursions+1)
+        return walk_on_spheres(domain, x, eps, wos, verbose, recursions+1)
     else:
+        if verbose:
+            print('Walk on spheres finished')
         print('Stopping walk on spheres')
-        # return the point on the boundary
+        # return the walk on spheres path and sample points
         return wos
 
 def solver(domain, walks):
@@ -163,4 +165,3 @@ if __name__ == '__main__':
     # toggle fullscreen mode
     plt.get_current_fig_manager().full_screen_toggle()
     plt.show()
-
