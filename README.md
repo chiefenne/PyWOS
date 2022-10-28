@@ -1,4 +1,5 @@
 # PyWOS
+![](images/WOS_example.png)
 
 Monte Carlo method based on a recursive walk-on-spheres implementation for solving a 2D Poisson PDE written in Python.
 
