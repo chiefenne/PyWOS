@@ -1,6 +1,13 @@
 '''
 Monte Carlo estimator for using the walk on spheres method
 by Sawhney & Crane
+
+Based on:
+https://www.cs.cmu.edu/~kmcrane/Projects/MonteCarloGeometryProcessing/WoSPoisson2D.cpp.html
+
+Author: Andreas Ennemoser
+Date: 2020-05-01
+
 '''
 
 import numpy as np
