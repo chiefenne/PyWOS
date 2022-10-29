@@ -14,3 +14,9 @@ The version presented here utilizes recursion.
 
 Associated literature and [video](https://youtu.be/dXROl0KGPXc) from the original author:
 ["Grid-Free Monte Carlo for PDEs with Spatially Varying Coefficients"](https://arxiv.org/abs/2201.13240) by Sawhney, Seyb, Jarosz, Crane.
+
+## Requirements
+
+- Python 3.9+ (due to the version of argparse which is used)
+- Numpy
+- Matplotlib
