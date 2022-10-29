@@ -82,7 +82,7 @@ def sample_point_inside_circle(R, x):
     # scale the point to the circle of radius R
     return x + np.array([r * np.cos(theta), r * np.sin(theta)])
 
-def walk_on_spheres(domain, x, walks, eps, wos=None, verbose=False, recursions=0):
+def walk_on_spheres(domain, x, steps, eps, wos=None, verbose=False, recursions=0):
     """Recursive walk on spheres implementation"""
 
     if recursions == 0 and verbose:
@@ -106,9 +106,9 @@ def walk_on_spheres(domain, x, walks, eps, wos=None, verbose=False, recursions=0
     # sample next point on the walk on the circle
     x = sample_point_on_circle(R, x)
 
-    if R > eps and recursions < walks:
+    if R > eps and recursions < steps:
         # recurse
-        return walk_on_spheres(domain, x, walks, eps, wos, verbose, recursions+1)
+        return walk_on_spheres(domain, x, steps, eps, wos, verbose, recursions+1)
     else:
         if verbose:
             print('Walk on spheres finished')
@@ -125,7 +125,6 @@ def solver(domain, walks):
 
 if __name__ == '__main__':
 
-    import os
     import matplotlib.pyplot as plt
 
     # get argunments for drawing options
@@ -133,12 +132,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--verbose', action=argparse.BooleanOptionalAction,
         default=False, help='Print recursion levels')
-    parser.add_argument('-w', '--walks', type=int, default=32,
-        help='Number of walks')
+    parser.add_argument('-w', '--walks', type=int, default=32, help='Number of walks')
+    parser.add_argument('-s', '--steps', type=int, default=16, help='Maximum number of steps per walk')
     parser.add_argument('-e', '--eps', type=float, default=0.1,
         help='Accuracy parameter')
-    parser.add_argument('-s', '--single_walk', action=argparse.BooleanOptionalAction,
-        default=True, help='Compute and draw only a single walk')
+    parser.add_argument('-d', '--draw_single', action=argparse.BooleanOptionalAction,
+        default=False, help='Draw only a single walk (do not solve PDE)')
     args = parser.parse_args()
 
     domain = sample_domain()
@@ -146,8 +145,8 @@ if __name__ == '__main__':
     # start point
     x0 = np.array([0.0, 0.0])
 
-    if args.single_walk:
-        wos = walk_on_spheres(domain, x0, args.walks, args.eps, verbose=args.verbose)
+    if args.draw_single:
+        wos = walk_on_spheres(domain, x0, args.steps, args.eps, verbose=args.verbose)
 
         # plot the domain
         domain = np.append(domain, [domain[0]], axis=0) # close the polygon
