@@ -82,7 +82,7 @@ def sample_point_inside_circle(R, x):
     # scale the point to the circle of radius R
     return x + np.array([r * np.cos(theta), r * np.sin(theta)])
 
-def walk_on_spheres(domain, x, eps, wos=None, verbose=False, recursions=0):
+def walk_on_spheres(domain, x, walks, eps, wos=None, verbose=False, recursions=0):
     """Recursive walk on spheres implementation"""
 
     if recursions == 0 and verbose:
@@ -106,9 +106,9 @@ def walk_on_spheres(domain, x, eps, wos=None, verbose=False, recursions=0):
     # sample next point on the walk on the circle
     x = sample_point_on_circle(R, x)
 
-    if R > eps:
+    if R > eps and recursions < walks:
         # recurse
-        return walk_on_spheres(domain, x, eps, wos, verbose, recursions+1)
+        return walk_on_spheres(domain, x, walks, eps, wos, verbose, recursions+1)
     else:
         if verbose:
             print('Walk on spheres finished')
@@ -125,44 +125,60 @@ def solver(domain, walks):
 
 if __name__ == '__main__':
 
+    import os
     import matplotlib.pyplot as plt
 
+    # get argunments for drawing options
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-v', '--verbose', action=argparse.BooleanOptionalAction,
+        default=False, help='Print recursion levels')
+    parser.add_argument('-w', '--walks', type=int, default=32,
+        help='Number of walks')
+    parser.add_argument('-e', '--eps', type=float, default=0.1,
+        help='Accuracy parameter')
+    parser.add_argument('-s', '--single_walk', action=argparse.BooleanOptionalAction,
+        default=True, help='Compute and draw only a single walk')
+    args = parser.parse_args()
 
     domain = sample_domain()
 
+    # start point
     x0 = np.array([0.0, 0.0])
-    eps = 0.1
-    wos = walk_on_spheres(domain, x0, eps, verbose=True)
 
-    # plot the domain
-    domain = np.append(domain, [domain[0]], axis=0) # close the polygon
-    plt.plot(domain[:, 0], domain[:, 1], 'r-', lw=2)
-    plt.plot(domain[:, 0], domain[:, 1], 'ro')
-    plt.axis('equal')
+    if args.single_walk:
+        wos = walk_on_spheres(domain, x0, args.walks, args.eps, verbose=args.verbose)
 
-    # plot the walk on spheres
-    col = list()
-    for x, y, R, cp in wos:
+        # plot the domain
+        domain = np.append(domain, [domain[0]], axis=0) # close the polygon
+        plt.plot(domain[:, 0], domain[:, 1], 'r-', lw=2)
+        plt.plot(domain[:, 0], domain[:, 1], 'ro')
+        plt.axis('equal')
+
         #random color
-        color = np.random.rand(3,)
-        col.append(color)
-        circle = plt.Circle(x, R, color=color, fill=False)
-        plt.gca().add_patch(circle)
-        plt.plot(x[0], x[1], color=color, marker='o', ms=3)
-        plt.plot(cp[0], cp[1], color=color, marker='x', ms=3)
-        plt.plot(y[0], y[1], color=color, marker='*')
-    
-    # plot last closest point, i.e., the boundary point
-    plt.plot(wos[-1][3][0], wos[-1][3][1], color=col[-1], marker='D', ms=4)
+        col = list()
+        for i in range(len(wos)):
+            color = np.random.rand(3,)
+            col.append(color)
 
-    # plot arrow between each x
-    for i in range(len(wos)-1):
-        x, _, _, _ = wos[i]
-        xn, _, _, _ = wos[i+1]
-        plt.arrow(x[0], x[1], xn[0]-x[0], xn[1]-x[1],
-                  head_width=0.1, head_length=0.2, fc=col[i], ec=col[i], length_includes_head=True)
-    plt.axis('equal')
+        # plot the spheres
+        for i, (x, y, R, cp) in enumerate(wos):
+            plt.plot(x[0], x[1], color=col[i], marker='o', ms=3)
+            plt.plot(cp[0], cp[1], color=col[i], marker='x', ms=3)
+            circle = plt.Circle(x, R, color=col[i], fill=False)
+            plt.gca().add_patch(circle)
+            plt.plot(y[0], y[1], color=col[i], marker='*', ms=3)
+        
+        # plot last closest point, i.e., the boundary point
+        plt.plot(wos[-1][3][0], wos[-1][3][1], color='m', marker='D', ms=5)
 
-    # toggle fullscreen mode
-    plt.get_current_fig_manager().full_screen_toggle()
-    plt.show()
+        # plot arrow between each x
+        for i in range(len(wos)-1):
+            x, _, _, _ = wos[i]
+            xn, _, Rn, _ = wos[i+1]
+            plt.arrow(x[0], x[1], xn[0]-x[0], xn[1]-x[1],
+                    head_width=0.05*(R+Rn)/2., head_length=0.15*(R+Rn)/2.,
+                    fc=col[i], ec=col[i], length_includes_head=True)
+
+        plt.axis('equal')
+        plt.show()
