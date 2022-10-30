@@ -115,11 +115,14 @@ def walk_on_spheres(domain, x, steps, eps, wos=None, verbose=False, recursions=0
         # return the walk on spheres path and sample points
         return wos
 
-def solver(domain, walks):
+def solver(domain, x0, walks, steps, eps, verbose):
     """Monte Carlo estimator for the Poisson equation using
     the walk on spheres method
     """
-    pass
+
+    for walk in range(walks):
+        wos = walk_on_spheres(domain, x0, steps, eps, verbose=verbose)
+    
     return
 
 
@@ -169,7 +172,7 @@ if __name__ == '__main__':
             plt.plot(y[0], y[1], color=col[i], marker='*', ms=3)
         
         # plot last closest point, i.e., the boundary point
-        plt.plot(wos[-1][3][0], wos[-1][3][1], color='m', marker='D', ms=5)
+        plt.plot(wos[-1][3][0], wos[-1][3][1], color='m', marker='o', mfc='none', mew=1.5, ms=6)
 
         # plot arrow between each x
         for i in range(len(wos)-1):
@@ -181,3 +184,7 @@ if __name__ == '__main__':
 
         plt.axis('equal')
         plt.show()
+
+    else:
+        # solve the Poisson equation
+        solver(domain, x0, args.walks, args.steps, args.eps, args.verbose)
