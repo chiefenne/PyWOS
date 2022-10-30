@@ -26,7 +26,7 @@ Do a single walk and plot it.
 ```code
 python Random_walks_Poisson_solver.py -d -v 
 ```
-Run the solver using seetings for number of walks, accuracy, and maximum number of steps per walk.
+Run the solver using dedicated settings for number of walks, accuracy, and maximum number of steps per walk.
 ```code
 python Random_walks_Poisson_solver.py -w 100 -e 0.01 -s 30 
 ```
