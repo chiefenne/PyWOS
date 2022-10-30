@@ -101,7 +101,7 @@ def walk_on_spheres(domain, x, source, solution, steps, eps, wos=None, verbose=F
 
     # update solution
     r = np.linalg.norm(x - y)
-    solution += np.pi * source(x, y) * G(r, R)
+    solution += np.pi * source((x, y)) * G(r, R)
 
     if wos is None:
         wos = list()
@@ -131,7 +131,7 @@ def solver(domain, x0, boundary_conditions, source, solution, walks, steps, eps,
 
         # update solution with boundary conditions
         for x, y, R, cp, solution in wos:
-            solution += boundary_conditions(x, y)
+            solution += boundary_conditions((x, y))
     
     return solution
 
@@ -159,7 +159,10 @@ if __name__ == '__main__':
     x0 = np.array([0.0, 0.0])
 
     # boundary conditions
-    def boundary_conditions(x, y):
+    def boundary_conditions(point):
+        
+        x, y = point
+        
         if y >= 0.0:
             return 1.0
         else:
@@ -168,8 +171,11 @@ if __name__ == '__main__':
             else:
                 return -1.0
 
-    def source(x, y):
+    def source(point):
         """Source term"""
+
+        x, y = point
+
         if args.draw_single:
             return 0.0
         else:
