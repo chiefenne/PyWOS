@@ -82,11 +82,13 @@ def sample_point_inside_circle(R, x):
     # scale the point to the circle of radius R
     return x + np.array([r * np.cos(theta), r * np.sin(theta)])
 
-def walk_on_spheres(domain, x, steps, eps, wos=None, verbose=False, recursions=0):
+def walk_on_spheres(domain, x, source, solution, steps, eps, wos=None, verbose=False, recursions=0):
     """Recursive walk on spheres implementation"""
 
-    if recursions == 0 and verbose:
-        print('Starting walk on spheres')
+    if recursions == 0:
+        if verbose:
+            print('Starting walk on spheres')
+            print('Solution at x0: {}'.format(solution))
     else:
         if verbose:
             print(f'Recursion level: {recursions:03d}')
@@ -97,33 +99,41 @@ def walk_on_spheres(domain, x, steps, eps, wos=None, verbose=False, recursions=0
     # sample a point uniformly inside the circle
     y = sample_point_inside_circle(R, x)
 
+    # update solution
+    r = np.linalg.norm(x - y)
+    solution += np.pi * source(x, y) * G(r, R)
+
     if wos is None:
         wos = list()
-        wos.append((x, y, R, cp))
+        wos.append((x, y, R, cp, solution))
     else:
-        wos.append((x, y, R, cp))
+        wos.append((x, y, R, cp, solution))
 
     # sample next point on the walk on the circle
     x = sample_point_on_circle(R, x)
 
     if R > eps and recursions < steps:
         # recurse
-        return walk_on_spheres(domain, x, steps, eps, wos, verbose, recursions+1)
+        return walk_on_spheres(domain, x, source, solution, steps, eps, wos, verbose, recursions+1)
     else:
         if verbose:
             print('Walk on spheres finished')
         # return the walk on spheres path and sample points
         return wos
 
-def solver(domain, x0, walks, steps, eps, verbose):
+def solver(domain, x0, boundary_conditions, source, solution, walks, steps, eps, verbose):
     """Monte Carlo estimator for the Poisson equation using
     the walk on spheres method
     """
 
     for walk in range(walks):
-        wos = walk_on_spheres(domain, x0, steps, eps, verbose=verbose)
+        wos = walk_on_spheres(domain, x0, source, solution, steps, eps, verbose=verbose)
+
+        # update solution with boundary conditions
+        for x, y, R, cp, solution in wos:
+            solution += boundary_conditions(x, y)
     
-    return
+    return solution
 
 
 if __name__ == '__main__':
@@ -148,8 +158,29 @@ if __name__ == '__main__':
     # start point
     x0 = np.array([0.0, 0.0])
 
+    # boundary conditions
+    def boundary_conditions(x, y):
+        if y >= 0.0:
+            return 1.0
+        else:
+            if x <= 0.0:
+                return 0.0
+            else:
+                return -1.0
+
+    def source(x, y):
+        """Source term"""
+        if args.draw_single:
+            return 0.0
+        else:
+            if y >= 0.0:
+                return 1.0
+            else:
+                return 0.0
+        
     if args.draw_single:
-        wos = walk_on_spheres(domain, x0, args.steps, args.eps, verbose=args.verbose)
+        solution = 0.0
+        wos = walk_on_spheres(domain, x0, source, solution, args.steps, args.eps, verbose=args.verbose)
 
         # plot the domain
         domain = np.append(domain, [domain[0]], axis=0) # close the polygon
@@ -164,7 +195,7 @@ if __name__ == '__main__':
             col.append(color)
 
         # plot the spheres
-        for i, (x, y, R, cp) in enumerate(wos):
+        for i, (x, y, R, cp, solution) in enumerate(wos):
             plt.plot(x[0], x[1], color=col[i], marker='o', ms=3)
             plt.plot(cp[0], cp[1], color=col[i], marker='x', ms=3)
             circle = plt.Circle(x, R, color=col[i], fill=False)
@@ -176,8 +207,8 @@ if __name__ == '__main__':
 
         # plot arrow between each x
         for i in range(len(wos)-1):
-            x, _, _, _ = wos[i]
-            xn, _, Rn, _ = wos[i+1]
+            x, _, _, _, _ = wos[i]
+            xn, _, Rn, _, _ = wos[i+1]
             plt.arrow(x[0], x[1], xn[0]-x[0], xn[1]-x[1],
                     head_width=0.05*(R+Rn)/2., head_length=0.15*(R+Rn)/2.,
                     fc=col[i], ec=col[i], length_includes_head=True)
@@ -187,4 +218,8 @@ if __name__ == '__main__':
 
     else:
         # solve the Poisson equation
-        solver(domain, x0, args.walks, args.steps, args.eps, args.verbose)
+        solution = 0.0
+        solution = solver(domain, x0, boundary_conditions, source, solution,
+            args.walks, args.steps, args.eps, args.verbose)
+
+        print(f'Estimated solution: {solution:0.4f}')
