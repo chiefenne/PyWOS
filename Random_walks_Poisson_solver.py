@@ -133,7 +133,7 @@ def solver(domain, x0, boundary_conditions, source, solution, walks, steps, eps,
         cp = wos[-1][3]
         solution += boundary_conditions(cp)
     
-    return solution
+    return solution / walks
 
 
 if __name__ == '__main__':
