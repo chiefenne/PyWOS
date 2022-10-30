@@ -88,7 +88,6 @@ def walk_on_spheres(domain, x, source, solution, steps, eps, wos=None, verbose=F
     if recursions == 0:
         if verbose:
             print('Starting walk on spheres')
-            print('Solution at x0: {}'.format(solution))
     else:
         if verbose:
             print(f'Recursion level: {recursions:03d}')
