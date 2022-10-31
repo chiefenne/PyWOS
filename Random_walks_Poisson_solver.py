@@ -142,7 +142,6 @@ def solver(domain, x0, boundary_conditions, source, solution, walks, steps, eps,
         print('Maximum number of steps: ', steps)
         print('Stopping criterion: ', eps)
         print(f'Distance to closest point on domain: {wos[-1][2]:.3e}')
-        print('Solution: ', solution)
     
     return solution / walks
 
