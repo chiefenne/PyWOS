@@ -104,9 +104,9 @@ def walk_on_spheres(domain, x, source, solution, steps, eps, wos=None, verbose=F
 
     if wos is None:
         wos = list()
-        wos.append((x, y, R, cp, solution))
+        wos.append((x, y, R, cp, solution, recursions))
     else:
-        wos.append((x, y, R, cp, solution))
+        wos.append((x, y, R, cp, solution, recursions))
 
     # sample next point on the walk on the circle
     x = sample_point_on_circle(R, x)
@@ -134,14 +134,18 @@ def solver(domain, x0, boundary_conditions, source, solution, walks, steps, eps,
         cp = wos[-1][3]
         solution += boundary_conditions(cp)
 
+        if verbose:
+            print(f'Distance to closest point on domain: {wos[-1][2]:.3e}')
+
     if verbose:
+        avg_recursions = np.mean([wos[i][5] for i in range(len(wos))])
         print(30*'*')
         print(30*'*')
         print(30*'*')
         print('Number of walks: ', walks)
         print('Maximum number of steps: ', steps)
+        print('Average number of steps (recursions): ', avg_recursions)
         print('Stopping criterion: ', eps)
-        print(f'Distance to closest point on domain: {wos[-1][2]:.3e}')
     
     return solution / walks
 
@@ -224,8 +228,8 @@ if __name__ == '__main__':
 
         # plot arrow between each x
         for i in range(len(wos)-1):
-            x, _, _, _, _ = wos[i]
-            xn, _, Rn, _, _ = wos[i+1]
+            x, _, _, _, _, _ = wos[i]
+            xn, _, Rn, _, _, _ = wos[i+1]
             plt.arrow(x[0], x[1], xn[0]-x[0], xn[1]-x[1],
                     head_width=0.05*(R+Rn)/2., head_length=0.15*(R+Rn)/2.,
                     fc=col[i], ec=col[i], length_includes_head=True)
