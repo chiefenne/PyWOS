@@ -36,3 +36,9 @@ python Random_walks_Poisson_solver.py -w 100 -e 0.01 -s 30
 - Python 3.9+ (due to the version of argparse which is used)
 - Numpy
 - Matplotlib
+
+## License
+
+2022 Andreas Ennemoser – andreas.ennemoser@aon.at
+
+Distributed under the MIT license. See [LICENSE](https://github.com/chiefenne/PyWOS/blob/main/LICENSE.md) for more information.
