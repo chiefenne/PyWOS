@@ -76,11 +76,12 @@ def sample_point_inside_circle(R, x):
     """Sample a point uniformly inside a circle of radius R
     centered at x in 2D.
     """
-    # sample a point uniformly inside the unit circle
+    # sample a point uniformly inside the unit circle and scale it to R
     r = R * np.random.uniform(0.0, 1.0)
     theta = np.random.uniform(0.0, 2.0 * np.pi)
-    # scale the point to the circle of radius R
-    return x + np.array([r * np.cos(theta), r * np.sin(theta)])
+    # sample point
+    y = x + np.array([r * np.cos(theta), r * np.sin(theta)])
+    return y, r
 
 def walk_on_spheres(domain, x, source, solution, steps, eps, wos=None, verbose=False, recursions=0):
     """Recursive walk on spheres implementation"""
@@ -92,14 +93,13 @@ def walk_on_spheres(domain, x, source, solution, steps, eps, wos=None, verbose=F
         if verbose:
             print(f'Recursion level: {recursions:03d}')
 
-    # radius of the circle centered at x
+    # closest point (cp) on domain to x and distance (R) to cp
     R, cp = closest_point_on_domain(domain, x)
 
-    # sample a point uniformly inside the circle
-    y = sample_point_inside_circle(R, x)
+    # sample a point uniformly inside the circle (used for the source term)
+    y, r = sample_point_inside_circle(R, x)
 
     # update solution
-    r = np.linalg.norm(x - y)
     solution += np.pi * source(y) * G(r, R)
 
     if wos is None:
@@ -126,11 +126,23 @@ def solver(domain, x0, boundary_conditions, source, solution, walks, steps, eps,
     """
 
     for walk in range(walks):
+        if verbose:
+            print(f'Walk {walk+1:03d}')
         wos = walk_on_spheres(domain, x0, source, solution, steps, eps, verbose=verbose)
 
         # update solution with boundary conditions
         cp = wos[-1][3]
         solution += boundary_conditions(cp)
+
+    if verbose:
+        print(30*'*')
+        print(30*'*')
+        print(30*'*')
+        print('Number of walks: ', walks)
+        print('Maximum number of steps: ', steps)
+        print('Stopping criterion: ', eps)
+        print(f'Distance to closest point on domain: {wos[-1][2]:.3e}')
+        print('Solution: ', solution)
     
     return solution / walks
 
@@ -153,9 +165,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     domain = sample_domain()
-
-    # start point
-    x0 = np.array([0.0, 0.0])
 
     # boundary conditions
     def boundary_conditions(point):
@@ -184,6 +193,10 @@ if __name__ == '__main__':
                 return 0.0
         
     if args.draw_single:
+
+        # starting point
+        x0 = np.array([0.0, 0.0])
+        # initial solution
         solution = 0.0
         wos = walk_on_spheres(domain, x0, source, solution, args.steps, args.eps, verbose=args.verbose)
 
@@ -222,8 +235,12 @@ if __name__ == '__main__':
         plt.show()
 
     else:
-        # solve the Poisson equation
+        # starting point
+        x0 = np.array([0.0, 0.0])
+        # initial solution
         solution = 0.0
+
+        # solve the Poisson equation
         solution = solver(domain, x0, boundary_conditions, source, solution,
             args.walks, args.steps, args.eps, args.verbose)
 
