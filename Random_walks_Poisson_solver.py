@@ -31,6 +31,18 @@ def sample_domain():
 
     return polygon
 
+def sample_square():
+    """Example polygon points for a unit square"""
+    p1 = (0.0, 0.0)
+    p2 = (1.0, 0.0)
+    p3 = (1.0, 1.0)
+    p4 = (0.0, 1.0)
+
+    # polygon from points
+    polygon = np.array([p1, p2, p3, p4])
+
+    return polygon
+
 def G(r, R):
     """Harmonic Green's function for a 2D ball of radius R"""
     return np.log(R / r) / (2.0 * np.pi)
@@ -50,7 +62,10 @@ def closest_point_on_line_segment(p, a, b):
     return a + ab * t
 
 def closest_point_on_domain(domain, x):
-    """Return the closest point on the domain to point x in 2D."""
+    """Return the closest point on the domain to point x in 2D.
+    The input polygon "domain" is a list of points in 2D. The segments are
+    assumed to be closed, i.e., the last point is connected to the first point.
+    """
     R = np.finfo(np.double).max
     closest_point = None
     # closest distance of x to the domain boundary
@@ -63,27 +78,30 @@ def closest_point_on_domain(domain, x):
             closest_point = cp
     return R, closest_point
 
-def sample_point_on_circle(R, x):
+def sample_point_on_circle(x, R):
     """Sample a point uniformly on a circle of radius R
     centered at x in 2D.
     """
     # sample a point uniformly on the unit circle
     theta = np.random.uniform(0.0, 2.0 * np.pi)
+
     # scale the point to the circle of radius R
     return x + np.array([R * np.cos(theta), R * np.sin(theta)])
 
-def sample_point_inside_circle(R, x):
+def sample_point_inside_circle(x, R):
     """Sample a point uniformly inside a circle of radius R
     centered at x in 2D.
     """
     # sample a point uniformly inside the unit circle and scale it to R
     r = R * np.random.uniform(0.0, 1.0)
     theta = np.random.uniform(0.0, 2.0 * np.pi)
+
     # sample point
     y = x + np.array([r * np.cos(theta), r * np.sin(theta)])
     return y, r
 
-def walk_on_spheres(domain, x, source, solution, steps, eps, wos=None, verbose=False, recursions=0):
+def walk_on_spheres(domain, x, source, solution, steps, eps,
+                    wos=None, verbose=False, recursions=0):
     """Recursive walk on spheres implementation"""
 
     if recursions == 0:
@@ -97,10 +115,11 @@ def walk_on_spheres(domain, x, source, solution, steps, eps, wos=None, verbose=F
     R, cp = closest_point_on_domain(domain, x)
 
     # sample a point uniformly inside the circle (used for the source term)
-    y, r = sample_point_inside_circle(R, x)
+    y, r = sample_point_inside_circle(x, R)
 
     # update solution
-    solution += np.pi * source(y) * G(r, R)
+    # solution += np.pi * source(y) * G(r, R)
+    solution += np.pi * source(y, uniform=0.0) * G(r, R)
 
     if wos is None:
         wos = list()
@@ -109,7 +128,7 @@ def walk_on_spheres(domain, x, source, solution, steps, eps, wos=None, verbose=F
         wos.append((x, y, R, cp, solution, recursions))
 
     # sample next point on the walk on the circle
-    x = sample_point_on_circle(R, x)
+    x = sample_point_on_circle(x, R)
 
     if R > eps and recursions < steps:
         # recurse
@@ -132,7 +151,7 @@ def solver(domain, x0, boundary_conditions, source, solution, walks, steps, eps,
 
         # update solution with boundary conditions
         cp = wos[-1][3]
-        solution += boundary_conditions(cp)
+        solution += boundary_conditions(cp, uniform=1.0)
 
         if verbose:
             print(f'Distance to closest point on domain: {wos[-1][2]:.3e}')
@@ -167,41 +186,49 @@ if __name__ == '__main__':
         default=False, help='Draw only a single walk (do not solve PDE)')
     args = parser.parse_args()
 
-    domain = sample_domain()
+    # domain = sample_domain()
+    domain = sample_square()
 
     # boundary conditions
-    def boundary_conditions(point):
+    def boundary_conditions(point, uniform=None):
         
         x, y = point
         
-        if y >= 0.0:
-            return 1.0
-        else:
-            if x <= 0.0:
-                return 0.0
+        if uniform is None:
+            if y >= 0.0:
+                return 1.0
             else:
-                return -1.0
+                if x <= 0.0:
+                    return 0.0
+                else:
+                    return -1.0
+        else:
+            return uniform
 
-    def source(point):
+    def source(point, uniform=None):
         """Source term"""
 
         x, y = point
 
-        if args.draw_single:
-            return 0.0
-        else:
-            if y >= 0.0:
-                return 1.0
-            else:
+        if uniform is None:
+            if args.draw_single:
                 return 0.0
+            else:
+                if y >= 0.0:
+                    return 1.0
+                else:
+                    return 0.0
+        else:
+            return uniform
         
     if args.draw_single:
 
         # starting point
-        x0 = np.array([0.0, 0.0])
+        x0 = np.array([0.2, 0.3])
         # initial solution
         solution = 0.0
-        wos = walk_on_spheres(domain, x0, source, solution, args.steps, args.eps, verbose=args.verbose)
+        wos = walk_on_spheres(domain, x0, source, solution,
+                              args.steps, args.eps, verbose=args.verbose)
 
         # plot the domain
         domain = np.append(domain, [domain[0]], axis=0) # close the polygon
@@ -216,7 +243,7 @@ if __name__ == '__main__':
             col.append(color)
 
         # plot the spheres
-        for i, (x, y, R, cp, solution) in enumerate(wos):
+        for i, (x, y, R, cp, solution, recursions) in enumerate(wos):
             plt.plot(x[0], x[1], color=col[i], marker='o', ms=3)
             plt.plot(cp[0], cp[1], color=col[i], marker='x', ms=3)
             circle = plt.Circle(x, R, color=col[i], fill=False)
@@ -228,10 +255,12 @@ if __name__ == '__main__':
 
         # plot arrow between each x
         for i in range(len(wos)-1):
-            x, _, _, _, _, _ = wos[i]
-            xn, _, Rn, _, _, _ = wos[i+1]
+            x, _, R, _, _, _ = wos[i]
+            xn, _, _, _, _, _ = wos[i+1]
+            hw = 0.05*R
+            hl = 0.15*R
             plt.arrow(x[0], x[1], xn[0]-x[0], xn[1]-x[1],
-                    head_width=0.05*(R+Rn)/2., head_length=0.15*(R+Rn)/2.,
+                    head_width=hw, head_length=hl, width=0.3*hw,
                     fc=col[i], ec=col[i], length_includes_head=True)
 
         plt.axis('equal')
@@ -239,12 +268,12 @@ if __name__ == '__main__':
 
     else:
         # starting point
-        x0 = np.array([0.0, 0.0])
+        x0 = np.array([0.5, 0.5])
         # initial solution
         solution = 0.0
 
         # solve the Poisson equation
         solution = solver(domain, x0, boundary_conditions, source, solution,
-            args.walks, args.steps, args.eps, args.verbose)
+                          args.walks, args.steps, args.eps, args.verbose)
 
         print(f'Estimated solution: {solution:0.4f}')
